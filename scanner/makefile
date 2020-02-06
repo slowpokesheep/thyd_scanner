@@ -6,7 +6,10 @@ NanoMorpho.java: nanomorpho.jflex
 clean:
 	rm -rf *~ NanoMorpho.class NanoMorpho.java
 
-test: test1
+test: test1 test2
 
-test1: NanoMorpho.class tests/test1.s
-	java NanoMorpho tests/test1.s
+test1:
+	java NanoMorpho tests/test1.s | ../util/test_output.py
+
+test2:
+	java NanoMorpho tests/test2.s | ../util/test_output.py
