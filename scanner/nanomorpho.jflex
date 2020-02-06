@@ -95,12 +95,12 @@ _NAME=([:letter:]|[\+\-*/!%=><\:\^\~&|?]|{_DIGIT})+
 }
 
 "return" {
-  //lexeme yytext();
+  lexeme = yytext();
   return RETURN;
 }
 
 "while" {
-  //lexeme yytext();
+  lexeme = yytext();
   return WHILE;
 }
 
@@ -110,12 +110,12 @@ _NAME=([:letter:]|[\+\-*/!%=><\:\^\~&|?]|{_DIGIT})+
 }
 
 "elsif" {
-  //lexeme yytext();
+  lexeme = yytext();
   return ELSIF;
 }
 
 "else" {
-  //lexeme yytext();
+  lexeme = yytext();
   return ELSE;
 }
 
