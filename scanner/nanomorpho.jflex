@@ -1,14 +1,21 @@
-/**
-	JFlex scanner example based on a scanner for NanoLisp.
-	Author: Snorri Agnarsson, 2017-2020
+/*
+  JFlex scanner for NanoMorpho
 
-	This stand-alone scanner/lexical analyzer can be built and run using:
-		java -jar JFlex-full-1.7.0.jar NanoMorpho.jflex
-		javac NanoMorpho.java
-		java NanoMorpho inputfile > outputfile
-	Also, the program 'make' can be used with the proper 'makefile':
-		make test
- */
+  Based on Snorri Agnarssons NanoLisp scanner.
+
+  Authors:  Hjalti Geir Garðarsson
+            Egill Ragnarsson
+            Guðmundur Óli Norland
+  
+  Running the program:
+    Compile:
+      java -jar JFlex-full-1.7.0.jar nanomorpho.jflex
+      javac NanoMorpho.java
+    Run:
+      java NanoMorpho <input_file> > <output_file>
+  
+  Use the makefile:
+*/
 
 import java.io.*;
 
@@ -25,11 +32,22 @@ import java.io.*;
 // the class, NanoMorpho.java, that is generated.
 
 // Definitions of tokens:
-final static int ERROR = -1;
-final static int IF = 1001;
-final static int DEFINE = 1002;
-final static int NAME = 1003;
-final static int LITERAL = 1004;
+static final int ERROR = -1;
+
+static final int NAME = 1001;
+static final int LITERAL = 1002;
+
+// Decleration <decl>
+static final int VAR = 1010;
+
+// Expression <expr>
+static final int RETURN = 1020;
+static final int WHILE = 1021;
+
+// If Expression <ifexpr>
+static final int IF = 1030;
+static final int ELSIF = 1031;
+static final int ELSE = 1032;
 
 // A variable that will contain lexemes as they are recognized:
 private static String lexeme;
@@ -37,65 +55,84 @@ private static String lexeme;
 // This runs the scanner:
 public static void main( String[] args ) throws Exception
 {
-	NanoMorpho lexer = new NanoMorpho(new FileReader(args[0]));
-	int token = lexer.yylex();
-	while( token!=0 )
-	{
-		System.out.println(""+token+": \'"+lexeme+"\'");
-		token = lexer.yylex();
-	}
+  NanoMorpho lexer = new NanoMorpho(new FileReader(args[0]));
+  int token = lexer.yylex();
+  
+  while(token != 0) {
+    System.out.println(""+token+": \'"+lexeme+"\'");
+    token = lexer.yylex();
+  }
 }
 
 %}
 
-  /* Reglulegar skilgreiningar */
-
-  /* Regular definitions */
-
+/* Regular definitions */
 _DIGIT=[0-9]
 _FLOAT={_DIGIT}+\.{_DIGIT}+([eE][+-]?{_DIGIT}+)?
 _INT={_DIGIT}+
 _STRING=\"([^\"\\]|\\b|\\t|\\n|\\f|\\r|\\\"|\\\'|\\\\|(\\[0-3][0-7][0-7])|\\[0-7][0-7]|\\[0-7])*\"
 _CHAR=\'([^\'\\]|\\b|\\t|\\n|\\f|\\r|\\\"|\\\'|\\\\|(\\[0-3][0-7][0-7])|(\\[0-7][0-7])|(\\[0-7]))\'
-_DELIM=[()]
+_DELIM=[()\{\},;=]
 _NAME=([:letter:]|[\+\-*/!%=><\:\^\~&|?]|{_DIGIT})+
 
 %%
 
-  /* Lesgreiningarreglur */
-  /* Scanning rules */
+/* Scanning rules */
 
 {_DELIM} {
-	lexeme = yytext();
-	return yycharat(0);
+  lexeme = yytext();
+  return yycharat(0);
 }
 
 {_STRING} | {_FLOAT} | {_CHAR} | {_INT} | null | true | false {
-	lexeme = yytext();
-	return LITERAL;
+  lexeme = yytext();
+  return LITERAL;
+}
+
+"var" {
+  lexeme = yytext();
+  return VAR;
+}
+
+"return" {
+  //lexeme yytext();
+  return RETURN;
+}
+
+"while" {
+  //lexeme yytext();
+  return WHILE;
 }
 
 "if" {
-	lexeme = yytext();
-	return IF;
+  lexeme = yytext();
+  return IF;
 }
 
-"define" {
-	lexeme = yytext();
-	return DEFINE;
+"elsif" {
+  //lexeme yytext();
+  return ELSIF;
+}
+
+"else" {
+  //lexeme yytext();
+  return ELSE;
 }
 
 {_NAME} {
-	lexeme = yytext();
-	return NAME;
+  lexeme = yytext();
+  return NAME;
 }
 
+// EOL character
 ";".*$ {
 }
 
+// White spaces are ignored
 [ \t\r\n\f] {
 }
 
+// If all rules fail, return an error
 . {
 	lexeme = yytext();
 	return ERROR;
