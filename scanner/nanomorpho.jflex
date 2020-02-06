@@ -36,6 +36,7 @@ static final int ERROR = -1;
 
 static final int NAME = 1001;
 static final int LITERAL = 1002;
+static final int OPNAME = 1003;
 
 // Decleration <decl>
 static final int VAR = 1010;
@@ -73,7 +74,8 @@ _INT={_DIGIT}+
 _STRING=\"([^\"\\]|\\b|\\t|\\n|\\f|\\r|\\\"|\\\'|\\\\|(\\[0-3][0-7][0-7])|\\[0-7][0-7]|\\[0-7])*\"
 _CHAR=\'([^\'\\]|\\b|\\t|\\n|\\f|\\r|\\\"|\\\'|\\\\|(\\[0-3][0-7][0-7])|(\\[0-7][0-7])|(\\[0-7]))\'
 _DELIM=[()\{\},;=]
-_NAME=([:letter:]|[\+\-*/!%=><\:\^\~&|?]|{_DIGIT})+
+_NAME=([:letter:]|{_DIGIT})+
+_OPNAME=[\+\-*/!%=><\:\^\~&|?]
 
 %%
 
@@ -124,8 +126,13 @@ _NAME=([:letter:]|[\+\-*/!%=><\:\^\~&|?]|{_DIGIT})+
   return NAME;
 }
 
+{_OPNAME} {
+  lexeme = yytext();
+  return OPNAME;
+}
+
 // EOL character
-";".*$ {
+";;;".*$ {
 }
 
 // White spaces are ignored
