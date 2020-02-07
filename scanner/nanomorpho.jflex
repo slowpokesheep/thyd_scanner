@@ -71,11 +71,14 @@ public static void main( String[] args ) throws Exception
 _DIGIT=[0-9]
 _FLOAT={_DIGIT}+\.{_DIGIT}+([eE][+-]?{_DIGIT}+)?
 _INT={_DIGIT}+
-_STRING=\"([^\"\\]|\\b|\\t|\\n|\\f|\\r|\\\"|\\\'|\\\\|(\\[0-3][0-7][0-7])|\\[0-7][0-7]|\\[0-7])*\"
-_CHAR=\'([^\'\\]|\\b|\\t|\\n|\\f|\\r|\\\"|\\\'|\\\\|(\\[0-3][0-7][0-7])|(\\[0-7][0-7])|(\\[0-7]))\'
+_BOOL=(true|false)
+_ESCAPE=\\b|\\t|\\n|\\f|\\r|\\\"|\\\'|\\\\|(\\[0-3][0-7][0-7])|(\\[0-7][0-7])|(\\[0-7])
+_CHAR=\'([^\'\\]|{_ESCAPE})\'
+_STRING=\"([^\"\\]|{_ESCAPE})*\"
 _DELIM=[()\{\},;=]
-_NAME=([:letter:]|{_DIGIT})+
-_OPNAME=[\+\-*/!%=><\:\^\~&|?]
+_NAME=([:letter:]|{_DIGIT}|_)+
+_OPNAME=([\+\-*/!%=><\:\^\~&|?])
+_OPNAMETWO=(\=\=|\!\=|&&|\|\|)
 
 %%
 
@@ -86,7 +89,7 @@ _OPNAME=[\+\-*/!%=><\:\^\~&|?]
   return yycharat(0);
 }
 
-{_STRING} | {_FLOAT} | {_CHAR} | {_INT} | null | true | false {
+{_STRING} | {_FLOAT} | {_CHAR} | {_INT} | {_BOOL} | null {
   lexeme = yytext();
   return LITERAL;
 }
@@ -126,7 +129,7 @@ _OPNAME=[\+\-*/!%=><\:\^\~&|?]
   return NAME;
 }
 
-{_OPNAME} {
+{_OPNAME} | {_OPNAMETWO} {
   lexeme = yytext();
   return OPNAME;
 }
