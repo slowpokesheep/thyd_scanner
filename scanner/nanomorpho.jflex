@@ -25,6 +25,7 @@ import java.io.*;
 %class NanoMorpho
 %unicode
 %byaccj
+%line
 
 %{
 
@@ -53,6 +54,14 @@ static final int ELSE = 1032;
 // A variable that will contain lexemes as they are recognized:
 private static String lexeme;
 
+public String getLexeme() {
+  return lexeme;
+}
+
+public int getLineNumber() {
+  return yyline + 1;
+}
+
 // This runs the scanner:
 public static void main( String[] args ) throws Exception
 {
@@ -77,8 +86,7 @@ _CHAR=\'([^\'\\]|{_ESCAPE})\'
 _STRING=\"([^\"\\]|{_ESCAPE})*\"
 _DELIM=[()\{\},;=]
 _NAME=([:letter:]|{_DIGIT}|_)+
-_OPNAME=([\+\-*/!%=><\:\^\~&|?])
-_OPNAMETWO=(\=\=|\!\=|&&|\|\|)
+_OPNAME=([\+\-*/!%=><\:\^\~&|?])+
 
 %%
 
@@ -129,7 +137,7 @@ _OPNAMETWO=(\=\=|\!\=|&&|\|\|)
   return NAME;
 }
 
-{_OPNAME} | {_OPNAMETWO} {
+{_OPNAME} {
   lexeme = yytext();
   return OPNAME;
 }
