@@ -8,7 +8,7 @@
 \rail@endplus
 \rail@end
 }
-\rail@i {2}{ function : NAME '(' ( NAME + ',' ) ? ')' ; s : curlL ( decl ';' + ) ? ( expr ';' + ) curlR }
+\rail@i {2}{ function : NAME '(' ( NAME + ',' ) ? ')' ; arrow : curlL ( decl ';' + ) ? ( expr ';' + ) curlR ; }
 \rail@o {2}{
 \rail@begin{3}{function}
 \rail@nont{NAME}[]
@@ -23,7 +23,7 @@
 \rail@endbar
 \rail@term{)}[]
 \rail@end
-\rail@begin{3}{s}
+\rail@begin{3}{arrow}
 \rail@nont{curlL}[]
 \rail@bar
 \rail@nextbar{1}
