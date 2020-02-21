@@ -13,3 +13,8 @@ main(asd, sdf) {
     };
   };
 }
+
+epli(lol) {
+  var epli;
+  epli = (567 - 123) + (999 && 345);
+}

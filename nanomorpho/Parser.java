@@ -5,15 +5,21 @@ public class Parser {
   private static NanoMorpho lexer;
   private static int token;
 
-  private static boolean accepted = false;
+  private static boolean should_advance = true;
 
   public static void main(String[] args) throws Exception {
     lexer = new NanoMorpho(new FileReader(args[0]));
-    token = -1;
+    token = advance(true);
 
     while (token != 0) {
       func();
+      token = lexer.yylex();
     }
+    System.out.println("Accepted!");
+  }
+
+  private static void debug(int line) {
+    System.out.println("DEBUG: line-" + line + ", token-" + token + ", lexeme-" + lexer.getLexeme());
   }
 
   private static void error(String s) {
@@ -27,132 +33,157 @@ public class Parser {
     return (int) c;
   }
 
-  private static int advance() throws Exception {
-    token = lexer.yylex();
-    if (token == 0) {
-      if (!accepted) {
-        throw new Error("Unexpected ending");
+  // we can use the adv parameter to "lookahead"
+  private static int advance(boolean adv) throws Exception {
+    if (should_advance) {
+      token = lexer.yylex();
+      if (token == 0) {
+        throw new Error("Ending is invalid");
       }
-      System.exit(0);
     }
-    System.out.println(token + " " + lexer.getLexeme());
+    // debug(44);   
+    should_advance = adv;
     return token;
   }
 
   public static void func() throws Exception {
-    // === NAME(... , ...) {decl -> expr} === //
-    if (advance() != NanoMorpho.NAME) error("function name");
-    if (advance() != asciiValue('(')) error("(");
-    // optional function variables
-    if (advance() != asciiValue(')')) {
+     // *** NAME(... , ...) *** //
+    if (token != NanoMorpho.NAME) error("function name");
+    if (advance(true) != asciiValue('(')) error("(");
+    // function variables are optional
+    if (advance(true) != asciiValue(')')) {
       if (token != NanoMorpho.NAME) error("function variable name");
       // multiple function variables
-      while (advance() == asciiValue(',')) {
-        if (advance() != NanoMorpho.NAME) error("function variable name");
+      while (advance(true) == asciiValue(',')) {
+        if (advance(true) != NanoMorpho.NAME) error("function variable name");
       }
     }
     // closing function paranthesis
     if (token != asciiValue(')')) error(")");
     
-    if (advance() != asciiValue('{')) error("{");
+    // *** { decl;* expr;*} *** //
+    if (advance(true) != asciiValue('{')) error("{");
     decl();
-    // we check for expressions until we reach }, or we reach
-    // an unexpected ending
+    /* 
+      we check for expressions until we reach },
+      or we reach an invalid ending.
+      We also want to make sure the function contains
+      at least one expression.
+    */
+    boolean contains_expr = false;
     while (token != asciiValue('}')) {
-      boolean is_empty = expr(token);
-      if (is_empty) {
-        error("expression");
-      }
-      if (advance() != asciiValue(';')) error(";");
-      advance();
+      expr(token);
+      if (advance(true) != asciiValue(';')) error(";");
+      advance(true);
+      contains_expr = true;
     }
-    // we reached the end!
-    accepted = true;
-    System.out.println("Accepted!");
+    if (!contains_expr) {
+      error("expression");
+    }
   }
 
-  // decl => var x; or var x, y, z....;
+  // *** var NAME,NAME..... *** //
   public static void decl() throws Exception {
-    while (advance() == NanoMorpho.VAR) {
-      if (advance() != NanoMorpho.NAME) error("variable name");
-      while (advance() == asciiValue(',')) {
-        if (advance() != NanoMorpho.NAME) error("variable name");
+    while (advance(false) == NanoMorpho.VAR) { // lookahead
+      advance(true); // use
+      if (advance(true) != NanoMorpho.NAME) error("variable name");
+      // additional variables seperated by commas
+      while (advance(true) == asciiValue(',')) {
+        if (advance(true) != NanoMorpho.NAME) error("variable name");
       }
       if (token != asciiValue(';')) error(";");
     }
   }
 
-  // returns true if the expr is empty
-  public static boolean expr(int first) throws Exception {
-    System.out.println("expr: " + first);
-    // NAME | NAME = expr | NAME = (expr,....)
+  public static void expr(int first) throws Exception {
+    boolean is_empty = true;
+    // *** NAME | NAME = expr | NAME = (expr,....) *** //
     if (first == NanoMorpho.NAME) {
       // assigning to a variable => NAME = expr
-      if (advance() == asciiValue('=')) {
-        expr(token);
+      if (advance(false) == asciiValue('=')) { // lookahead
+        advance(true); // use
+        expr(advance(true));
       }
       // function call => (expr, expr.....)
-      if (advance() == asciiValue('(')) {
-        if (advance() != asciiValue(')')) {
+      else if (advance(false) == asciiValue('(')) { // lookahead
+        advance(true); // use
+        if (advance(false) != asciiValue(')')) { // lookahead
           // first parameter
-          expr(token); // we have already advanced in the if statement
+          expr(advance(true));
           // additional parameters
-          while (advance() == asciiValue(',')) expr(advance());
-          if (advance() != asciiValue(')')) error(")");
+          while (advance(true) == asciiValue(',')) expr(advance(true));
+          if (advance(true) != asciiValue(')')) error(")");
+        } else {
+          advance(true); // use
         }
       }
-      return false;
-    }
-    
-    else if (first == NanoMorpho.RETURN || first == NanoMorpho.OPNAME) {
-      expr(advance());
-      return false;
+      is_empty = false;
     }
 
-    else if (first == NanoMorpho.LITERAL) return true;
+    // *** return expr | OPNAME expr *** //
+    else if (first == NanoMorpho.RETURN || first == NanoMorpho.OPNAME) {
+      expr(advance(true));
+      is_empty = false;
+    }
+
+    // *** LITERAL *** //
+    else if (first == NanoMorpho.LITERAL) {
+      is_empty = false;
+    }
+
 
     else if (first == asciiValue('(')) {
-      boolean is_empty = expr(advance());
-      if (is_empty) error("expression");
-      if (advance() != asciiValue(')')) error(")");
-      return false;
+      expr(advance(true));
+      if (advance(true) != asciiValue(')')) error(")");
+      is_empty = false;
     }
 
     else if (first == NanoMorpho.WHILE) {
-      if (advance() != asciiValue('(')) error("(");
-      // þarf að vera expr!
-      boolean is_empty = expr(advance());
-      if (is_empty) error("expression");
-      if (advance() != asciiValue(')')) error(")");
+      if (advance(true) != asciiValue('(')) error("(");
+      expr(advance(true));
+      if (advance(true) != asciiValue(')')) error(")");
       body();
-      return false;
+      is_empty = false;
     }
 
     else {
-      boolean is_empty = ifexpr(first);
-      return is_empty;
+      is_empty = ifexpr(first);
+    }
+
+    // lookahead and check if next token is an operator, if so
+    // we need to follow up with an expression
+    if (advance(false) == NanoMorpho.OPNAME) {
+      advance(true);
+      expr(advance(true));
+    }
+    
+    // empty expressions result in an error
+    if (is_empty) {
+      error("expression");
     }
   }
 
   // returns true if the ifexpr is empty
   public static boolean ifexpr(int first) throws Exception {
-    System.out.println("ifexpr");
+    // debug(168);
     if (first == NanoMorpho.IF) {
-      if (advance() != asciiValue('(')) error("(");
-      boolean is_empty = expr(advance());
-      if (is_empty) error("expression");
-      if (advance() != asciiValue(')')) error(")");
+      if (advance(true) != asciiValue('(')) error("(");
+      expr(advance(true));
+      if (advance(true) != asciiValue(')')) error(")");
       body();
 
-      if (advance() == NanoMorpho.ELSIF) {
-        if (advance() != asciiValue('(')) error("(");
-        is_empty = expr(advance());
-        if (is_empty) error("expression");
-        if (advance() != asciiValue(')')) error(")");
+      if (advance(false) == NanoMorpho.ELSIF) { // lookahead
+        advance(true); // use
+        if (advance(true) != asciiValue('(')) error("(");
+        expr(advance(true));
+        if (advance(true) != asciiValue(')')) error(")");
         body();
       }
-
-      if (advance() == NanoMorpho.ELSE) body();
+      
+      if (advance(false) == NanoMorpho.ELSE) { // lookahead
+        advance(true); // use
+        body();
+      }
 
       return false;
     }
@@ -160,16 +191,17 @@ public class Parser {
   }
 
   public static void body() throws Exception {
-    System.out.println("body");
-    if (advance() != asciiValue('{')) error("{");
-    while (token != asciiValue(';')) {
-      boolean is_empty = expr(advance());
-      if (is_empty) {
-        error("expression");
-      }
-      advance();
+    // debug(194);
+    if (advance(true) != asciiValue('{')) {
+      error("{");
     }
-    if (advance() != asciiValue('}')) error("}");
+    while (token != asciiValue(';')) {
+      expr(advance(true));
+      advance(true);
+    }
+    if (advance(true) != asciiValue('}')) {
+      error("}");
+    }
   }
 
 }

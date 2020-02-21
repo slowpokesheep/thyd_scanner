@@ -29,7 +29,22 @@ testScanner3:
 
 # Parser
 
-testParser: testParser1
+testParser: testParserInvalid1 testParserInvalid2 testParserInvalid3 testParserInvalid4 testParserInvalid5 testParserValid 
 
-testParser1:
-	java Parser tests/parser/test1_correct.s | ../util/test_output.py
+testParserInvalid1:
+	java Parser tests/parser/test_invalid1.s | ../util/test_output.py
+
+testParserInvalid2:
+	java Parser tests/parser/test_invalid2.s | ../util/test_output.py
+
+testParserInvalid3:
+	java Parser tests/parser/test_invalid3.s | ../util/test_output.py
+
+testParserInvalid4:
+	java Parser tests/parser/test_invalid4.s | ../util/test_output.py
+
+testParserInvalid5:
+	java Parser tests/parser/test_invalid5.s | ../util/test_output.py
+
+testParserValid:
+	java Parser tests/parser/test_valid.s | ../util/test_output.py
