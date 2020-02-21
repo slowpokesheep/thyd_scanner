@@ -69,7 +69,8 @@ public static void main( String[] args ) throws Exception
   int token = lexer.yylex();
   
   while(token != 0) {
-    System.out.println(""+token+": \'"+lexeme+"\'");
+    //System.out.println(""+token+": \'"+lexeme+"\'");
+    System.out.format("%4s | %s\n", token, lexeme);
     token = lexer.yylex();
   }
 }

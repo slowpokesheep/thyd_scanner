@@ -8,6 +8,10 @@ NanoMorpho.class: NanoMorpho.java
 NanoMorpho.java: nanomorpho.jflex
 	java -jar jflex-full-1.7.0.jar nanomorpho.jflex
 
+## Make dev ##
+dev:
+	javac Parser.java
+
 ## Clean ##
 clean:
 	rm -rf *~ NanoMorpho.class NanoMorpho.java Parser.class
@@ -19,32 +23,28 @@ clean:
 testScanner: testScanner1 testScanner2 testScanner3
 
 testScanner1:
-	java NanoMorpho tests/scanner/test1_correct.s | ../util/test_output.py
-
+	java NanoMorpho tests/scanner/test1_correct.s | ../util/scanner_output.py
 testScanner2:
-	java NanoMorpho tests/scanner/test3_correct.s | ../util/test_output.py
-
+	java NanoMorpho tests/scanner/test2_correct.s | ../util/scanner_output.py
 testScanner3:
-	java NanoMorpho tests/scanner/test3_error.s | ../util/test_output.py
+	java NanoMorpho tests/scanner/test3_error.s | ../util/scanner_output.py
 
 # Parser
 
-testParser: testParserInvalid1 testParserInvalid2 testParserInvalid3 testParserInvalid4 testParserInvalid5 testParserValid 
+testParser: testParserInvalid1 testParserInvalid2 testParserInvalid3 testParserInvalid4 testParserInvalid5 testParserInvalid6 testParserValid 
 
 testParserInvalid1:
-	java Parser tests/parser/test_invalid1.s | ../util/test_output.py
-
+	java Parser tests/parser/test_invalid1.s 2>&1 | ../util/parser_output.py
 testParserInvalid2:
-	java Parser tests/parser/test_invalid2.s | ../util/test_output.py
-
+	java Parser tests/parser/test_invalid2.s 2>&1 | ../util/parser_output.py
 testParserInvalid3:
-	java Parser tests/parser/test_invalid3.s | ../util/test_output.py
-
+	java Parser tests/parser/test_invalid3.s 2>&1 | ../util/parser_output.py
 testParserInvalid4:
-	java Parser tests/parser/test_invalid4.s | ../util/test_output.py
-
+	java Parser tests/parser/test_invalid4.s 2>&1 | ../util/parser_output.py
 testParserInvalid5:
-	java Parser tests/parser/test_invalid5.s | ../util/test_output.py
+	java Parser tests/parser/test_invalid5.s 2>&1 | ../util/parser_output.py
+testParserInvalid6:
+	java Parser tests/parser/test_invalid6.s 2>&1 | ../util/parser_output.py
 
 testParserValid:
-	java Parser tests/parser/test_valid.s | ../util/test_output.py
+	java Parser tests/parser/test_valid.s 2>&1 | ../util/parser_output.py
