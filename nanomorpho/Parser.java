@@ -100,6 +100,7 @@ public class Parser {
     // *** NAME | NAME = expr | NAME = (expr,....) *** //
     if (first == NanoMorpho.NAME) {
       // assigning to a variable => NAME = expr
+      should_advance = true;
       if (advance(false) == asciiValue('=')) { // lookahead
         advance(true); // use
         expr(advance(true));
