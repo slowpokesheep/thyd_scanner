@@ -1,5 +1,11 @@
 \documentclass{homework}
 
+
+\usepackage{rail} % Draw syntax, cfg diagram
+\railalias{curlL}{\{}
+\railalias{curlR}{\}}
+\railalias{arrow}{->}
+
 \definecolor{bg}{rgb}{0.95,0.95,0.95}
 
 \begin{document}
@@ -19,12 +25,50 @@
 
 \newpage
 
-\begin{question}{makefile}
+\begin{question}{NanoMorpho-Málrit}
+\end{question}
+\begin{answer}
+  \begin{rail}
+    program : ( function + )
+  \end{rail}
+  \begin{rail}
+    function  : NAME '('  ( NAME + ',' ) ? ')' ;
+    arrow     : curlL ( decl ';' + ) ? ( expr ';' + ) curlR
+  \end{rail}
+  \begin{rail}
+    decl : 'var' ( NAME + ',' )
+  \end{rail}
+  \begin{rail}
+    expr  : NAME
+          | NAME '=' expr
+          | NAME '('  ( expr + ',' ) ?   ')'
+          | 'return' expr
+          | OPNAME expr
+          | expr OPNAME expr
+          | LITERAL
+          | '('  expr  ')'
+          | ifexpr
+          | 'while' '('  expr  ')' body
+  \end{rail}
+  \begin{rail}
+    ifexpr  : 'if' '('  expr  ')' body ;
+    arrow   : (  ( 'elsif' '('  expr  ')'  body  + )  ) ? ;
+    arrow   : ( 'else' body ) ? ;
+  \end{rail}
+  \begin{rail}
+    body : curlL ( expr ';' + ) curlR
+  \end{rail}
+\end{answer}
+
+\begin{question}{Test output}
   
 \end{question}
 \begin{answer}
-  \begin{minted}[autogobble,tabsize=2, bgcolor=bg,breaklines,breakanywhere]{makefile}
-  \end{minted}
+  \begin{figure}[h]
+    \centering
+    %\caption*{Test_1}
+    %\includegraphics[width=0.8\textwidth]{test_invalid1.png}
+  \end{figure}
 \end{answer}
 
 \end{document}

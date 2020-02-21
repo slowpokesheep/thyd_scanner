@@ -1,0 +1,6 @@
+\rail@i{1}{ program : ( function + ) }
+\rail@i{2}{ function : NAME '(' ( NAME + ',' ) ? ')' ; arrow : curlL ( decl ';' + ) ? ( expr ';' + ) curlR }
+\rail@i{3}{ decl : 'var' ( NAME + ',' ) }
+\rail@i{4}{ expr : NAME | NAME '=' expr | NAME '(' ( expr + ',' ) ? ')' | 'return' expr | OPNAME expr | expr OPNAME expr | LITERAL | '(' expr ')' | ifexpr | 'while' '(' expr ')' body }
+\rail@i{5}{ ifexpr : 'if' '(' expr ')' body ; arrow : ( ( 'elsif' '(' expr ')' body + ) ) ? ; arrow : ( 'else' body ) ? ; }
+\rail@i{6}{ body : curlL ( expr ';' + ) curlR }
