@@ -9,7 +9,7 @@ public class Parser {
 
   public static void main(String[] args) throws Exception {
     lexer = new NanoMorpho(new FileReader(args[0]));
-    token = advance(true);
+    token = advance();
 
     while (token != 0) {
       func();
@@ -63,48 +63,56 @@ public class Parser {
     return true;
   }
 
-  // we can use the adv parameter to "lookahead"
-  private static int advance(boolean adv) throws Exception {
+  private static int advance() throws Exception {
     if (should_advance) {
       token = lexer.yylex();
       if (token == 0) {
         throw new Error("Ending is invalid");
       }
     }
-    // debug(44);   
-    should_advance = adv;
+    should_advance = true;
+    return token;
+  }
+
+  /* 
+    we look at the next token without "using" it,
+    meaning that the next time advance is called,
+    the same token is used
+  */
+  private static int lookahead() throws Exception {
+    advance();
+    should_advance = false;
     return token;
   }
 
   public static void func() throws Exception {
-    
     // *** NAME(... , ...) *** //
     check(NanoMorpho.NAME);
     
     // Read next token
-    advance(true);
+    advance();
     check('(');
     
     // Read next token
-    advance(true);
+    advance();
     
 
     if (! optionalCheck(')')) {
-
+      
       check(NanoMorpho.NAME);
 
       // Read next token
-      advance(true);
+      advance();
 
       // Reading function parameters
       while (optionalCheck(',')) {
 
         // Read next token
-        advance(true);
+        advance();
         check(NanoMorpho.NAME);
 
         // Read next token
-        advance(true);
+        advance();
       }
       
     }
@@ -113,7 +121,7 @@ public class Parser {
     check(')');
     
     // Read next token
-    advance(true);
+    advance();
     check('{');
 
     // *** { decl;* expr;*} *** //
@@ -131,11 +139,11 @@ public class Parser {
       expr();
 
       // Read next token
-      advance(true);
+      advance();
       check(';');
 
       // Read next token
-      advance(true);
+      advance();
       contains_expr = true;
     }
     if (!contains_expr) error("expression");
@@ -144,89 +152,92 @@ public class Parser {
   // *** var NAME,NAME..... *** //
   public static void decl() throws Exception {
 
+    // just in case it's set to false before the call
+    should_advance = true;
+
     // Lookahead next token
-    advance(false);
+    lookahead();
     
     while (optionalCheck(NanoMorpho.VAR)) {
 
       // Use token
-      advance(true);
+      advance();
 
       // Read next token
-      advance(true);
+      advance();
       check(NanoMorpho.NAME);
 
       // Additional variables, seperate by commas
-      advance(true);
+      advance();
       while (optionalCheck(',')) {
 
         // Read next token
-        advance(true);
+        advance();
         check(NanoMorpho.NAME);
 
-        advance(true);
+        advance();
       }
       check(';');
 
       // Lookahead next token
-      advance(false);
+      lookahead();
     }
   }
 
   public static void expr() throws Exception {
+
+    // just in case it's set to false before the call
+    should_advance = true;
 
     boolean is_empty = true;
     
     // *** NAME | NAME = expr | NAME = (expr,....) *** //
     if (optionalCheck(NanoMorpho.NAME)) {
       
-      
       // assigning to a variable => NAME = expr
-      should_advance = true;
-
-
+      
       // Lookahead next token
-      advance(false);
+      lookahead();
 
       if (optionalCheck('=')) {
 
         // Read next token
-        advance(true);
-        advance(true);
+        advance();
+        advance();
 
         expr();
       }
       
       // Lookahead next token
-      advance(false);
+      lookahead();
 
       if (optionalCheck('(')) {
 
         // Read next token
-        advance(true);
+        advance();
         // Lookahead next token
-        advance(false);
+        lookahead();
 
         if (! optionalCheck(')')) {
 
           // First parameter
-          advance(true);
+          advance();
           expr();
 
           // Additional parameters
-          advance(true);
+          advance();
           while (optionalCheck(',')) {
             // n parameter
-            advance(true);
+            advance();
             expr();
           }
 
           // Read next token
-          advance(true);
+          advance();
           check(')');
 
         }
-        else advance(true);
+        else advance();
 
       }
       is_empty = false;
@@ -236,7 +247,7 @@ public class Parser {
     else if (optionalCheck(NanoMorpho.RETURN) || optionalCheck(NanoMorpho.OPNAME)) {
       
       // Read next token
-      advance(true);
+      advance();
       expr();
       is_empty = false;
     }
@@ -248,11 +259,11 @@ public class Parser {
     else if (optionalCheck('(')) {
       
       // Read next token
-      advance(true);
+      advance();
       expr();
 
       // Read next token
-      advance(true);
+      advance();
       check(')');
 
       is_empty = false;
@@ -261,15 +272,15 @@ public class Parser {
     else if (optionalCheck(NanoMorpho.WHILE)) {
 
       // Read next token
-      advance(true);
+      advance();
       check('(');
       
       // Read next token
-      advance(true);
+      advance();
       expr();
 
       // Read next token
-      advance(true);
+      advance();
       check(')');
 
       body();
@@ -277,71 +288,73 @@ public class Parser {
     }
     else is_empty = ifexpr();
 
+    // Empty expressions result in an error
+    if (is_empty) error("expression");
+
     // Lookahead and check if next token is an operator, if so
     // we need to follow up with an expression
-    advance(false);
+    lookahead();
     
     if (optionalCheck(NanoMorpho.OPNAME)) {
 
-      advance(true);
+      advance();
 
       // Read next token
-      advance(true);
+      advance();
       expr();
     }
-    
-    // Empty expressions result in an error
-    if (is_empty) error("expression");
   }
 
   // Returns true if the ifexpr is empty
   public static boolean ifexpr() throws Exception {
-    // debug(168);
+    
+    // just in case it's set to false before the call
+    should_advance = true;
     
     if (optionalCheck(NanoMorpho.IF)) {
 
       // Read next token
-      advance(true);
+      advance();
       check('(');
       
       // Read next token
-      advance(true);
+      advance();
       expr();
 
       // Read next token
-      advance(true);
+      advance();
       check(')');
 
       body();
 
       // Lookahead next token
-      advance(false);
+      lookahead();
       if (optionalCheck(NanoMorpho.ELSIF)) {
 
         // Use token
-        advance(true);
+        advance();
 
         // Read next token
-        advance(true);
+        advance();
         check('(');
 
         // Read next token
-        advance(true);
+        advance();
         expr();
 
         // Read next token
-        advance(true);
+        advance();
         check(')');
 
         body();
       }
       
       // Lookahead next token
-      advance(false);
+      lookahead();
       if (optionalCheck(NanoMorpho.ELSE)) {
 
         // Use token
-        advance(true);
+        advance();
         body();
       }
       return false;
@@ -349,22 +362,24 @@ public class Parser {
     return true;
   }
 
-  public static void body() throws Exception {
-    // debug(194);
+  public static void body() throws Exception {    
     
+    // just in case it's set to false before the call
+    should_advance = true;
+
     // Read next token
-    advance(true);
+    advance();
     check('{');
 
     while (! optionalCheck(';')) {
 
-      advance(true);
+      advance();
       expr();
-      advance(true);
+      advance();
     }
 
     // Read next token
-    advance(true);
+    advance();
     check('}');
   }
 
