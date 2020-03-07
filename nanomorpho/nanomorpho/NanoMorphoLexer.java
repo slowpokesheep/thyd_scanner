@@ -22,9 +22,9 @@ public class NanoMorphoLexer {
   private static int currLine, nextLine;
   private static int currColumn, nextColumn;
 
-  private static NanoMorpho2 lexer;
+  private static NanoMorpho lexer;
 
-  public NanoMorphoLexer(NanoMorpho2 l) {
+  public NanoMorphoLexer(NanoMorpho l) {
     lexer = l;
   }
 

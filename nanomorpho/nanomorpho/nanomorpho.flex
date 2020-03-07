@@ -25,7 +25,7 @@ import java.io.*;
 %%
 
 %public
-%class NanoMorpho2
+%class NanoMorpho
 
 %unicode
 %byaccj
@@ -46,13 +46,13 @@ import java.io.*;
 
 public static void main(String args[]) throws Exception {  
   NanoMorphoLexer lexer = new NanoMorphoLexer(
-      new NanoMorpho2(new FileReader(args[0]))
+      new NanoMorpho(new FileReader(args[0]))
     );
 
   NanoMorphoParser parser = new NanoMorphoParser();
 
   //lexer.scan(); // Activate only scanner
-  parser.start();
+  parser.start(); // Activate parser and scanner
 }
 
 // Getters
