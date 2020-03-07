@@ -8,6 +8,16 @@ NanoMorpho.class: NanoMorpho.java
 NanoMorpho.java: nanomorpho.jflex
 	java -jar jflex-full-1.7.0.jar nanomorpho.jflex
 
+## Make new ##
+new: new2
+	javac nanomorpho/NanoMorpho2.java
+new2:
+	java -jar jflex-full-1.7.0.jar nanomorpho/nanomorpho2.flex
+
+## Maker newclean ##
+newclean:
+	rm -rf *~ nanomorpho/NanoMorpho2.class Utils/*.class
+
 ## Make dev ##
 dev:
 	javac Parser.java

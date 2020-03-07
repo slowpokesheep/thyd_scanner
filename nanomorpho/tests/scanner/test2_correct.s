@@ -1,4 +1,4 @@
-my_function(j, k) {
+myFunction(j, k) {
 
   if (j > k) {
     return j;
