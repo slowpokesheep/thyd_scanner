@@ -1,7 +1,7 @@
 package nanomorpho;
 
+import java.io.PrintWriter;
 import java.util.Vector;
-import java.util.Arrays;
 import java.util.HashMap;
 
 public class NanoMorphoCompiler {
@@ -16,6 +16,8 @@ public class NanoMorphoCompiler {
   static final int NAME    = NanoMorphoLexer.NAME;
   static final int OPNAME  = NanoMorphoLexer.OPNAME;
   static final int LITERAL = NanoMorphoLexer.LITERAL;
+
+  static PrintWriter writer;
 
   // Intermediate code element identification strings
   enum type {
@@ -102,7 +104,11 @@ public class NanoMorphoCompiler {
     catch (Throwable e) {
       System.err.println(e.getMessage());
     }
-    generateProgram(NanoMorphoLexer.filename, code);
+    String filename = NanoMorphoLexer.filename;
+    String programname = filename.substring(0, filename.indexOf('.'));
+    writer = new PrintWriter(programname+".masm", "UTF-8");    
+    generateProgram(programname, code);
+    writer.close();
   }
 
   public static Object[] program() throws Exception {
@@ -148,9 +154,20 @@ public class NanoMorphoCompiler {
     }
 
     Vector<Object> exprs = new Vector<>();
-    // Check for expresions
+    // Check for expressions
     while (getCurrToken() != '}') {
-      exprs.add(expr());
+      // prump
+      Object[] ex = expr();
+      // single expression
+      if (ex[0].getClass().isEnum()) {
+        exprs.add(ex);
+      }
+      // array of expressions
+      else {
+        for (Object e: ex) {
+          exprs.add(e);
+        }
+      }
       over(';');
     }
     over('}');
@@ -299,10 +316,9 @@ public class NanoMorphoCompiler {
       return new Object[] { type.CALL, varName, smallexpr() };
     case '(':
       over('(');
-      exprs = new Vector<>();
-      exprs.add(expr());
+      Object[] ex = expr();
       over(')');
-      return exprs.toArray();
+      return ex;
     default:
       expected("expression");
       return null;
@@ -323,13 +339,13 @@ public class NanoMorphoCompiler {
   }
 
   static void print(String s) {
-    System.out.println(s);
+    // System.out.println(s);
+    writer.println(s);
   }
 
   // Final code
 
-  static void generateProgram(String filename, Object[] funs) {
-    String programname = filename.substring(0,filename.indexOf('.'));
+  static void generateProgram(String programname, Object[] funs) {
     print("\""+programname+".mexe\" = main in");
     print("!");
     print("{{");
@@ -390,7 +406,6 @@ public class NanoMorphoCompiler {
   static void generateExpr(Object[] e) {
 
     System.out.println("GENERATEEXPR");
-
     switch((type) e[0]) {
       case RETURN: // ["RETURN", expr]
         generateExpr((Object[]) e[1]);
@@ -422,11 +437,13 @@ public class NanoMorphoCompiler {
         print("(MakeVal "+e[1]+")");
         break;
       case IF: // ["IF", expr, expr, expr]
-
-        generateExpr((Object[]) e[1]);
+        
+        // prump
+        if (!(e[1] instanceof Boolean))
+          generateExpr((Object[]) e[1]);
         String label = newLabel();
 
-        print("(GoFalse) "+label+"");
+        print("(GoFalse "+label+")");
         generateBody((Object[]) e[2]);
 
         print(""+label+":");
@@ -437,7 +454,6 @@ public class NanoMorphoCompiler {
         }
         break;
       case WHILE: // ["WHILE", expr, expr]
-
         String labelStart = newLabel();
         String labelStop = newLabel();
 
@@ -450,7 +466,7 @@ public class NanoMorphoCompiler {
 
         System.out.println("While generate Expr");
         generateExpr((Object[]) e[1]);
-        print("(GoTrue) "+labelStart+"");
+        print("(GoTrue "+labelStart+")");
         break;
       case BODY: // ["BODY", expr]
         generateBody(e);
