@@ -13,10 +13,14 @@ flex:
 clean:
 	rm -rf nanomorpho/NanoMorpho.java nanomorpho/*~ nanomorpho/*.class
 
+curr:
+	javac nanomorpho/NanoMorphoCompiler.java
+
 ## Test ##
 
 test:
-	java nanomorpho/NanoMorpho tests/valid.s
+	java nanomorpho/NanoMorpho tests/test.nm
+## java nanomorpho/NanoMorpho tests/valid.s
 
 errortest: test1 test2 test3 test4 test5 test6
 

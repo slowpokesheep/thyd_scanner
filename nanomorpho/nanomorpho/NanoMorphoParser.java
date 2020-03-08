@@ -85,18 +85,18 @@ public class NanoMorphoParser {
 
   static void expr() throws Exception {
 
-    if( getCurrToken()==RETURN ) {
+    if (getCurrToken() == RETURN) {
         over(RETURN); expr();
     }
     else if (getCurrToken() == NAME && getNextToken() == '=') {
-        over(NAME); over('='); expr();
+      over(NAME); over('='); expr();
     }
     else {
       binopexpr();
     }
   }
 
-  static void  binopexpr() throws Exception {
+  static void binopexpr() throws Exception {
     smallexpr();
     while (getCurrToken() == OPNAME) {
       over(OPNAME); smallexpr();
@@ -106,42 +106,42 @@ public class NanoMorphoParser {
   static void smallexpr() throws Exception {
 
     switch (getCurrToken()) {
-    case NAME:
-      over(NAME);
+      case NAME:
+        over(NAME);
 
-      if (getCurrToken() == '(') {
-        over('(');
-        if (getCurrToken() != ')') {
+        if (getCurrToken() == '(') {
+          over('(');
+          if (getCurrToken() != ')') {
             for(;;) {
               expr();
               if (getCurrToken() == ')') break;
               over(',');
             }
+          }
+          over(')');
         }
-        over(')');
-      }
-      return;
-    case WHILE:
-      over(WHILE); expr(); body(); return;
-    case IF:
-      over(IF); expr(); body();
+        return;
+      case WHILE:
+        over(WHILE); expr(); body(); return;
+      case IF:
+        over(IF); expr(); body();
 
-      while (getCurrToken() == ELSIF) {
-        over(ELSIF); expr(); body();
-      }
+        while (getCurrToken() == ELSIF) {
+          over(ELSIF); expr(); body();
+        }
 
-      if (getCurrToken() == ELSE) {
-        over(ELSE); body();
-      }
-      return;
-    case LITERAL:
-      over(LITERAL); return;
-    case OPNAME:
-      over(OPNAME); smallexpr(); return;
-    case '(':
-      over('('); expr(); over(')'); return;
-    default:
-      expected("expression");
+        if (getCurrToken() == ELSE) {
+          over(ELSE); body();
+        }
+        return;
+      case LITERAL:
+        over(LITERAL); return;
+      case OPNAME:
+        over(OPNAME); smallexpr(); return;
+      case '(':
+        over('('); expr(); over(')'); return;
+      default:
+        expected("expression");
     }
   }
 

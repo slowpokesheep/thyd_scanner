@@ -1,7 +1,5 @@
 package nanomorpho;
 
-import java.io.*;
-
 public class NanoMorphoLexer {
 
   // Definitions of tokens:
@@ -23,8 +21,10 @@ public class NanoMorphoLexer {
   private static int currColumn, nextColumn;
 
   private static NanoMorpho lexer;
+  public static String filename;
 
-  public NanoMorphoLexer(NanoMorpho l) {
+  public NanoMorphoLexer(String f, NanoMorpho l) {
+    filename = f;
     lexer = l;
   }
 

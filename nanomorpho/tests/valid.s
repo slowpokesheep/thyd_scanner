@@ -1,9 +1,9 @@
 main(asd, sdf) {
-  var krabbi;
+  var krabbi, pabbi;
   var bubbi;
-  bubbi();
+  epli(10);
   while(x == 5) {
-    bubbi();
+    epli(5);
   };
   if (krabbi != 123 != asd < bvc) {
     if (x) {
@@ -18,7 +18,6 @@ main(asd, sdf) {
 epli(lol) {
   var epli;
   epli = (567 - 123) + (999 && 345);
-  mango;
   if (5 > 6) {
     1 + 2;
   } elsif (6 > 7) {

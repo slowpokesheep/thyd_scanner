@@ -45,6 +45,7 @@ import java.io.*;
 
 public static void main(String args[]) throws Exception {  
   NanoMorphoLexer lexer = new NanoMorphoLexer(
+      args[0],
       new NanoMorpho(new FileReader(args[0]))
     );
 
