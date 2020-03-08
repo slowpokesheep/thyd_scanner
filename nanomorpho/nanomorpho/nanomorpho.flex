@@ -20,7 +20,6 @@
 package nanomorpho;
 
 import java.io.*;
-//import Utils.Utils;
 
 %%
 
@@ -50,9 +49,11 @@ public static void main(String args[]) throws Exception {
     );
 
   NanoMorphoParser parser = new NanoMorphoParser();
+  NanoMorphoCompiler compiler = new NanoMorphoCompiler();
 
-  //lexer.scan(); // Activate only scanner
-  parser.start(); // Activate parser and scanner
+  //lexer.scan();     // Activate only scanner
+  //parser.start();   // Activate parser and scanner
+  compiler.start(); // Activate compiler and scanner
 }
 
 // Getters
@@ -112,6 +113,6 @@ yytext = Returns the text matched by the current regular expression.
 
 // If all rules fail, return an error
 [^] {
-	//return ERROR;
-  throw new Error("Illegal character <"+yytext()+">");
+  return NanoMorphoLexer.ERROR;
+  //throw new Error("Illegal character <"+yytext()+">");
 }

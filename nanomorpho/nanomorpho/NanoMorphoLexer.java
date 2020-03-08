@@ -115,5 +115,6 @@ public class NanoMorphoLexer {
   public static int getNextToken() { return nextToken; }
   public static String getCurrLexeme() { return currLexeme; }
   public static int getCurrLine() { return currLine + 1; }
+  public static int getNextLine() { return nextLine + 1; }
   public static int getCurrColumn() { return currColumn + 1; }
 }

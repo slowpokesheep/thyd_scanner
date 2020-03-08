@@ -1,6 +1,8 @@
 
 ## Make ##
-main: scanner
+main: parser
+	javac nanomorpho/NanoMorphoCompiler.java
+parser: scanner
 	javac nanomorpho/NanoMorphoParser.java
 scanner: flex
 	javac nanomorpho/NanoMorpho.java
@@ -9,7 +11,7 @@ flex:
 
 ## Maker clean ##
 clean:
-	rm -rf nanomorpho/*~ nanomorpho/*.class
+	rm -rf nanomorpho/NanoMorpho.java nanomorpho/*~ nanomorpho/*.class
 
 ## Test ##
 

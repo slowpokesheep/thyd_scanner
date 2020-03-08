@@ -2,16 +2,16 @@ package nanomorpho;
 
 public class NanoMorphoParser {
 
-  public static final int ERROR   = NanoMorphoLexer.ERROR;
-  public static final int IF      = NanoMorphoLexer.IF;
-  public static final int ELSE    = NanoMorphoLexer.ELSE;
-  public static final int ELSIF   = NanoMorphoLexer.ELSIF;
-  public static final int WHILE   = NanoMorphoLexer.WHILE;
-  public static final int VAR     = NanoMorphoLexer.VAR;
-  public static final int RETURN  = NanoMorphoLexer.RETURN;
-  public static final int NAME    = NanoMorphoLexer.NAME;
-  public static final int OPNAME  = NanoMorphoLexer.OPNAME;
-  public static final int LITERAL = NanoMorphoLexer.LITERAL;
+  static final int ERROR   = NanoMorphoLexer.ERROR;
+  static final int IF      = NanoMorphoLexer.IF;
+  static final int ELSE    = NanoMorphoLexer.ELSE;
+  static final int ELSIF   = NanoMorphoLexer.ELSIF;
+  static final int WHILE   = NanoMorphoLexer.WHILE;
+  static final int VAR     = NanoMorphoLexer.VAR;
+  static final int RETURN  = NanoMorphoLexer.RETURN;
+  static final int NAME    = NanoMorphoLexer.NAME;
+  static final int OPNAME  = NanoMorphoLexer.OPNAME;
+  static final int LITERAL = NanoMorphoLexer.LITERAL;
 
   static String advance() throws Exception {
     return NanoMorphoLexer.advance();
@@ -39,8 +39,6 @@ public class NanoMorphoParser {
 
   public static void start() throws Exception {
     NanoMorphoLexer.init();
-    //NanoMorphoLexer.scan();
-
     program();
   }
 
