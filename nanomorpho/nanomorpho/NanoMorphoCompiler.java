@@ -270,7 +270,10 @@ public class NanoMorphoCompiler {
           }
           over(')');
         }
-      return new Object[] { type.CALL, varName, exprs };
+        else {
+          return new Object[] { type.FETCH, findVar(varName) };
+        }
+      return new Object[] { type.CALL, varName, exprs.toArray()};
     case WHILE:
       over(WHILE);
       return new Object[] { type.WHILE, expr(), body() };
@@ -327,9 +330,9 @@ public class NanoMorphoCompiler {
 
   static void generateProgram(String filename, Object[] funs) {
     String programname = filename.substring(0,filename.indexOf('.'));
-    System.out.println("\""+programname+".mexe\" = main in");
-    System.out.println("!");
-    System.out.println("{{");
+    print("\""+programname+".mexe\" = main in");
+    print("!");
+    print("{{");
     
     for (Object f: funs) {
       generateFunction((Object[]) f);
@@ -364,8 +367,103 @@ public class NanoMorphoCompiler {
     print("(Return)");
     print("];");
   }
+  
+  // All existing labels, i.e. labels the generated
+  // code that we have already produced, should be
+  // of form
+  //    _xxxx
+  // where xxxx corresponds to an integer n
+  // such that 0 <= n < nextLab.
+  // So we should update nextLab as we generate
+  // new labels.
+  // The first generated label would be _0, the
+  // next would be _1, and so on.
+  private static int nextLab = 0;
+  
+  // Returns a new, previously unused, label.
+  // Useful for control-flow expressions.
+  static String newLabel() {
+      return "_"+(nextLab++);
+  }
 
+  // RETURN, STORE, OR, AND, NOT, CALL, FETCH, LITERAL, IF, WHILE, BODY
   static void generateExpr(Object[] e) {
-    //
+
+    System.out.println("GENERATEEXPR");
+
+    switch((type) e[0]) {
+      case RETURN: // ["RETURN", expr]
+        generateExpr((Object[]) e[1]);
+        print("(Return)");
+        break;
+      case STORE: // ["STORE", pos, expr]
+        generateExpr((Object[]) e[2]);
+        print("(Store "+e[1]+")");
+        break;
+      case NOT: // ["NOT", expr]
+        generateExpr((Object[]) e[1]);
+        print("(Not)");
+        break;
+      case CALL: // ["CALL", name, args]
+        Object[] args = (Object[]) e[2];
+
+        for (Object arg: args) {
+          print("(Push)");
+          System.out.println("SWITCH CALL " + arg);
+          generateExpr((Object[]) arg);
+        }
+
+        print("(Call #\""+e[1]+"[f"+args.length+"]\" "+args.length+")");
+        break;
+      case FETCH: // ["FETCH", pos]
+        print("(Fetch "+e[1]+")");
+        break;
+      case LITERAL:
+        print("(MakeVal "+e[1]+")");
+        break;
+      case IF: // ["IF", expr, expr, expr]
+
+        generateExpr((Object[]) e[1]);
+        String label = newLabel();
+
+        print("(GoFalse) "+label+"");
+        generateBody((Object[]) e[2]);
+
+        print(""+label+":");
+
+        Object[] els = (Object[]) e[3];
+        if (els != null) {
+          generateExpr(els);
+        }
+        break;
+      case WHILE: // ["WHILE", expr, expr]
+
+        String labelStart = newLabel();
+        String labelStop = newLabel();
+
+        print("(Go "+labelStop+")");
+        print(""+labelStart+":");
+
+        generateBody((Object[]) e[2]);
+
+        print(""+labelStop+":");
+
+        System.out.println("While generate Expr");
+        generateExpr((Object[]) e[1]);
+        print("(GoTrue) "+labelStart+"");
+        break;
+      case BODY: // ["BODY", expr]
+        generateBody(e);
+        break;
+      default:
+        break;
+    }
+  }
+
+  static void generateBody(Object[] e) {
+    
+    for (Object expr: (Object[]) e[1]) {
+      generateExpr((Object[]) expr);
+    }
   }
 }
