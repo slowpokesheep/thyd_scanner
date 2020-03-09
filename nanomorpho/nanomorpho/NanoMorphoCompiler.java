@@ -106,7 +106,7 @@ public class NanoMorphoCompiler {
     }
     String filename = NanoMorphoLexer.filename;
     String programname = filename.substring(0, filename.indexOf('.'));
-    writer = new PrintWriter(programname+".masm", "UTF-8");    
+    writer = new PrintWriter(programname+".masm", "UTF-8");
     generateProgram(programname, code);
     writer.close();
   }
@@ -266,7 +266,7 @@ public class NanoMorphoCompiler {
   static Object[] smallexpr() throws Exception {
 
     String varName;
-    Vector<Object> e = new Vector<>();
+    Vector<Object[]> ifexpr = new Vector<>();
     Vector<Object> exprs = null;
 
     switch (getCurrToken()) {
@@ -296,18 +296,23 @@ public class NanoMorphoCompiler {
       return new Object[] { type.WHILE, expr(), body() };
     case IF:
       over(IF);
-      e.add(new Object[] { type.IF, expr(), body(), null });
+      ifexpr.add(new Object[] { type.IF, expr(), body(), null });
 
       while (getCurrToken() == ELSIF) {
         over(ELSIF);
-        e.add(new Object[] { type.IF, expr(), body(), null });
+        Object[] e = new Object[] { type.IF, expr(), body(), null };
+
+        if (ifexpr.size() == 1) ifexpr.get(0)[3] = e;
+        else ifexpr.get(ifexpr.size() - 1)[3] = e;
       }
 
       if (getCurrToken() == ELSE) {
         over(ELSE);
-        e.add(new Object[] { type.IF, true, body(), null });
+        Object[] e = new Object[] { type.IF, true, body(), null };
+        if (ifexpr.size() == 1) ifexpr.get(0)[3] = e;
+        else ifexpr.get(ifexpr.size() - 1)[3] = e;
       }
-      return e.toArray();
+      return ifexpr.toArray();
     case LITERAL:
       varName = over(LITERAL);
       return new Object[] { type.LITERAL, varName };
@@ -339,7 +344,7 @@ public class NanoMorphoCompiler {
   }
 
   static void print(String s) {
-    // System.out.println(s);
+    //System.out.println(s);
     writer.println(s);
   }
 
@@ -370,7 +375,7 @@ public class NanoMorphoCompiler {
     print("[");
 
 
-    for (int i = 0; i < argCount; ++i) {
+    for (int i = 0; i < varCount; ++i) {
       print("(MakeVal null)");
       print("(Push)");
     }
@@ -402,10 +407,13 @@ public class NanoMorphoCompiler {
       return "_"+(nextLab++);
   }
 
+  static int newIntLabel() {
+    return nextLab++;
+  }
+
   // RETURN, STORE, OR, AND, NOT, CALL, FETCH, LITERAL, IF, WHILE, BODY
   static void generateExpr(Object[] e) {
 
-    System.out.println("GENERATEEXPR");
     switch((type) e[0]) {
       case RETURN: // ["RETURN", expr]
         generateExpr((Object[]) e[1]);
@@ -424,7 +432,6 @@ public class NanoMorphoCompiler {
 
         for (Object arg: args) {
           print("(Push)");
-          System.out.println("SWITCH CALL " + arg);
           generateExpr((Object[]) arg);
         }
 
@@ -438,6 +445,35 @@ public class NanoMorphoCompiler {
         break;
       case IF: // ["IF", expr, expr, expr]
         
+        int labelElse = newIntLabel();
+        int labelEnd = newIntLabel();
+
+        Object[] then = (Object[]) e[2];
+
+        if ((e[1] instanceof Boolean)) {
+          generateExpr(then);
+          print("(Go _"+labelEnd+")");
+          print("_"+labelElse+":");
+          print("_"+labelEnd+":");
+          return;
+        }
+        Object[] cond = (Object[]) e[1];
+
+        generateJump(cond, 0, labelElse);
+        generateExpr(then);
+
+        print("(Go _"+labelEnd+")");
+        print("_"+labelElse+":");
+
+        Object[] els = (Object[]) e[3];
+        if (els != null) {
+          generateExpr(els);
+        }
+
+        print("_"+labelEnd+":");
+        break;
+
+        /*
         // prump
         if (!(e[1] instanceof Boolean))
           generateExpr((Object[]) e[1]);
@@ -453,6 +489,7 @@ public class NanoMorphoCompiler {
           generateExpr(els);
         }
         break;
+        */
       case WHILE: // ["WHILE", expr, expr]
         String labelStart = newLabel();
         String labelStop = newLabel();
@@ -464,7 +501,6 @@ public class NanoMorphoCompiler {
 
         print(""+labelStop+":");
 
-        System.out.println("While generate Expr");
         generateExpr((Object[]) e[1]);
         print("(GoTrue "+labelStart+")");
         break;
@@ -481,5 +517,11 @@ public class NanoMorphoCompiler {
     for (Object expr: (Object[]) e[1]) {
       generateExpr((Object[]) expr);
     }
+  }
+
+  private static void generateJump(Object[] e, int labelTrue, int labelFalse) {
+    generateExpr(e);
+    if (labelTrue != 0 ) print("(GoTrue _"+labelTrue+")");
+    if (labelFalse != 0 ) print("(GoFalse _"+labelFalse+")");
   }
 }

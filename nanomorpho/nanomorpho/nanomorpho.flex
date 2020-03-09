@@ -77,9 +77,11 @@ yytext = Returns the text matched by the current regular expression.
 
 %}
 
+/*
 %eof{
   System.out.println("End of file");
 %eof}
+*/
 
 /* Regular definitions */
 
