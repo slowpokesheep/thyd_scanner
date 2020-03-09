@@ -2,10 +2,13 @@
 
 ## Nanomorpho
 
-* [Scanner](nanomorpho/nanomorpho.jflex)
+* [Jflex](nanomorpho/nanomorpho/nanomorpho.flex)
+* [Lexer](nanomorpho/nanomorpho/NanoMorphoLexer.java)
   * [pdf](nanomorpho/latex/scanner/scanner.pdf)
-* [Parser](nanomorpho/Parser.java)
+* [Parser](nanomorpho/nanomorpho/NanoMorphoParser.java)
   * [pdf](nanomorpho/latex/parser/parser.pdf)
+* [Compiler](nanomorpho/nanomorpho/NanoMorphoCompiler.java)
+  * [pdf](nanomorpho/latex/compiler/compiler.pdf)
 
 ## Running the program
 
@@ -21,10 +24,7 @@ make clean
 ```
 **Run Tests**
 ```
-make testScanner
-```
-```
-make testParser
+make test
 ```
 
 ### Manual

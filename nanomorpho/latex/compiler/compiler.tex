@@ -1,4 +1,26 @@
-package nanomorpho;
+\documentclass{homework}
+
+\definecolor{bg}{rgb}{0.95,0.95,0.95}
+
+\begin{document}
+\frontpage{Þýðendur}{Compiler-NanoMorpho}{Guðmundur Óli Norland}{Egill Ragnarsson}{Snorri Agnarsson}
+
+\begin{question}{Upplýsingar}
+\end{question}
+\begin{answer}
+  \href{https://github.com/slowpokesheep/thydendur/tree/master/nanomorpho/nanomorpho}{Github}
+  \begin{description}
+    \item[NanoMorphoCompiler] - Er milliþulusmiður og lokaþulusmiður
+    \item[NanoMorphoLexer] - Er lesgreinir ásamt \textbf{nanomorpho.flex}
+  \end{description}
+  Neðst má sjá að compiler'inn okkar breytt skránni \textbf{test.nm} í morpho assembler kóða, \textbf{test.masm} og svo loks keyrslu á þeirri skrá.
+\end{answer}
+
+\begin{question}{NanoMorphoCompiler}
+\end{question}
+\begin{answer}
+  \begin{minted}[autogobble,tabsize=2, bgcolor=bg,breaklines,breakanywhere]{java}
+  package nanomorpho;
 
 import java.io.PrintWriter;
 import java.util.Vector;
@@ -507,3 +529,463 @@ public class NanoMorphoCompiler {
     if (labelFalse != 0 ) print("(GoFalse _"+labelFalse+")");
   }
 }
+  \end{minted}
+\end{answer}
+
+\newpage
+\begin{question}{NanoMorphoLexer}
+\end{question}
+\begin{answer}
+  \begin{minted}[autogobble,tabsize=2, bgcolor=bg,breaklines,breakanywhere]{java}
+    package nanomorpho;
+
+public class NanoMorphoLexer {
+
+  // Definitions of tokens:
+  public static final int ERROR   = -1;
+  public static final int IF      = 1001;
+  public static final int ELSE    = 1002;
+  public static final int ELSIF   = 1003;
+  public static final int WHILE   = 1004;
+  public static final int VAR     = 1005;
+  public static final int RETURN  = 1006;
+  public static final int NAME    = 1007;
+  public static final int OPNAME  = 1008;
+  public static final int LITERAL = 1009;
+
+  // Variables for scanner and parser
+  private static int currToken, nextToken;
+  private static String currLexeme, nextLexeme;
+  private static int currLine, nextLine;
+  private static int currColumn, nextColumn;
+
+  private static NanoMorpho lexer;
+  public static String filename;
+
+  public NanoMorphoLexer(String f, NanoMorpho l) {
+    filename = f;
+    lexer = l;
+  }
+
+  // Run just the scanner
+  public static void scan() throws Exception {
+    init();
+
+    while(currToken != 0) {
+      System.out.format("%4s | %s\n", currToken, currLexeme);
+      advance();
+    }
+  }
+
+  public static void init() throws Exception {
+    nextToken = lexer.yylex();
+    nextLexeme = lexer.yytext();
+    nextLine = lexer.getLine();
+    nextColumn = lexer.getColumn();
+    advance();
+  }
+
+  public static String advance() throws Exception {
+    String res = currLexeme;
+
+    currToken = nextToken;
+    currLexeme = nextLexeme;
+    currLine = nextLine;
+    currColumn = nextColumn;
+
+    if (nextToken != 0) {
+      nextToken = lexer.yylex();
+      nextLexeme = lexer.yytext();
+      nextLine = lexer.getLine();
+      nextColumn = lexer.getColumn();
+    }
+
+    return res;
+  }
+
+  private static String tokenName(int token) {
+
+    if (token < 1000) return "" + (char) token;
+
+    switch(token) {
+      case IF: return "if";
+      case ELSE: return "else";
+      case ELSIF: return "elsif";
+      case WHILE: return "while";
+      case VAR: return "var";
+      case RETURN: return "return";
+      case NAME: return "name";
+      case OPNAME: return "operation";
+      case LITERAL: return "literal";
+      default: throw new Error();
+    }
+  }
+
+  private static void expected(int token) {
+    expected(tokenName(token));
+  }
+
+  private static void expected(char token) {
+    expected("" + token);
+  }
+
+  public static void expected(String token) {
+    throw new Error("Expected "+token+", found '"+currLexeme+"' near line "+(currLine + 1)+", column "+(currColumn + 1)+"");
+  }
+
+  public static String over(int token) throws Exception {
+
+    if (currToken != token) expected(token);
+    String res = currLexeme;
+    advance();
+    return res;
+  }
+
+  public static String over(char token) throws Exception {
+
+    if (currToken != token) expected(token);
+    String res = currLexeme;
+    advance();
+    return res;
+  }
+
+  // Getters
+  public static int getCurrToken() { return currToken; }
+  public static int getNextToken() { return nextToken; }
+  public static String getCurrLexeme() { return currLexeme; }
+  public static int getCurrLine() { return currLine + 1; }
+  public static int getNextLine() { return nextLine + 1; }
+  public static int getCurrColumn() { return currColumn + 1; }
+}
+  \end{minted}
+\end{answer}
+
+\newpage
+\begin{question}{nanomorpho.flex}
+\end{question}
+\begin{answer}
+  \begin{minted}[autogobble,tabsize=2, bgcolor=bg,breaklines,breakanywhere]{java}
+    /*
+  JFlex scanner for NanoMorpho
+
+  Based on Snorri Agnarssons NanoLisp scanner.
+
+  Authors:  Hjalti Geir Garðarsson
+            Egill Ragnarsson
+            Guðmundur Óli Norland
+  
+  Running the program:
+    Compile:
+      java -jar JFlex-full-1.7.0.jar nanomorpho.jflex
+      javac NanoMorpho.java
+    Run:
+      java NanoMorpho <input_file> > <output_file>
+  
+  Use the makefile:
+*/
+
+package nanomorpho;
+
+import java.io.*;
+
+%%
+
+%public
+%class NanoMorpho
+
+%unicode
+%byaccj
+
+// Switch these variables on
+%line   // yyline
+%column // yycolumn
+%char   // yychar
+
+// Default main classes
+//%debug
+//%standalone
+
+%{
+
+// This part becomes a verbatim part of the program text inside
+// the class, NanoMorpho.java, that is generated.
+
+public static void main(String args[]) throws Exception {  
+  NanoMorphoLexer lexer = new NanoMorphoLexer(
+      args[0],
+      new NanoMorpho(new FileReader(args[0]))
+    );
+
+  NanoMorphoParser parser = new NanoMorphoParser();
+  NanoMorphoCompiler compiler = new NanoMorphoCompiler();
+
+  //lexer.scan();     // Activate only scanner
+  //parser.start();   // Activate parser and scanner
+  compiler.start(); // Activate compiler and scanner
+}
+
+// Getters
+public int getLine() { return yyline; }
+public int getColumn() { return yycolumn; }
+
+/*
+// Variables
+
+yyline = Number of newlines encountered up to the start of the matched text
+yychar = Number of characters up to the start of the matched text
+yycolumn = Number of characters from the last newline up to the start of the matched text
+
+// Functions
+
+yylex = Resumes scanning until the next regular expression is matched, the end of input is encountered or an I/O-Error occurs.
+
+yytext = Returns the text matched by the current regular expression.
+*/
+
+%}
+
+/*
+%eof{
+  System.out.println("End of file");
+%eof}
+*/
+
+/* Regular definitions */
+
+%include lexicalrules.flex
+
+%%
+
+/* Scanning rules */
+
+{_DELIM} { return yycharat(0); }
+
+{_STRING} | {_FLOAT} | {_CHAR} | {_INT} | {_BOOL} | null {
+  return NanoMorphoLexer.LITERAL;
+}
+
+"var" { return NanoMorphoLexer.VAR; }
+"return" { return NanoMorphoLexer.RETURN; }
+"while" { return NanoMorphoLexer.WHILE; }
+"if" { return NanoMorphoLexer.IF; }
+"elsif" { return NanoMorphoLexer.ELSIF; }
+"else" { return NanoMorphoLexer.ELSE; }
+
+{_NAME} { return NanoMorphoLexer.NAME; }
+
+{_OPNAME} { return NanoMorphoLexer.OPNAME; }
+
+// Comment
+";;;".*$ { /* Ignore */ }
+
+// White spaces
+[ \t\r\n\f] { /* Ignore */ }
+
+// If all rules fail, return an error
+[^] {
+  return NanoMorphoLexer.ERROR;
+  //throw new Error("Illegal character <"+yytext()+">");
+}
+  \end{minted}
+\end{answer}
+
+\newpage
+\begin{question}{Lexical Rules}
+\end{question}
+\begin{answer}
+  \begin{minted}[autogobble,tabsize=2, bgcolor=bg,breaklines,breakanywhere]{java}
+  _DIGIT=[0-9]
+_FLOAT={_DIGIT}+\.{_DIGIT}+([eE][+-]?{_DIGIT}+)?
+_INT={_DIGIT}+
+_BOOL = (true|false)
+_STRING=\"([^\"\\]|\\b|\\t|\\n|\\f|\\r|\\\"|\\\'|\\\\|(\\[0-3][0-7][0-7])|\\[0-7][0-7]|\\[0-7])*\"
+_CHAR=\'([^\'\\]|\\b|\\t|\\n|\\f|\\r|\\\"|\\\'|\\\\|(\\[0-3][0-7][0-7])|(\\[0-7][0-7])|(\\[0-7]))\'
+_DELIM=[(){},;=]
+_NAME=([:letter:]|{_DIGIT})+
+_OPNAME=[\+\-*/!%&=><\:\^\~&|?]+
+  \end{minted}
+\end{answer}
+
+
+\newpage
+\begin{question}{test.nm}
+  \begin{minted}[autogobble,tabsize=2, bgcolor=bg,breaklines,breakanywhere]{java}
+    fibo(n)
+{
+	var i,f1,f2,tmp;
+	f1 = 1;
+	f2 = 1;
+	i = 0;
+	while( i!=n )
+	{
+		tmp = f1+f2;
+		f1 = f2;
+		f2 = tmp;
+		i = i+1;
+	};
+	f1;
+}
+
+f(n)
+{
+	if( n<2 )
+	{
+		1;
+	}
+	else
+	{
+		f(n-1) + f(n-2);
+	};
+}
+
+main()
+{
+	writeln(1:2:3:null);
+	writeln("fibo(35)="++fibo(35));
+	writeln("fibo(35)="++f(35));
+}
+  \end{minted}
+\end{question}
+\begin{answer}
+  \begin{figure}[H]
+    \centering
+    %\includegraphics[width=0.4\textwidth]{daemi_01.png}
+  \end{figure}
+\end{answer}
+
+\newpage
+\begin{question}{test.masm}
+  \begin{minted}[autogobble,tabsize=2, bgcolor=bg,breaklines,breakanywhere]{java}
+    "tests/test.mexe" = main in
+!
+{{
+#"fibo[f1]" =
+[
+(MakeVal null)
+(Push)
+(MakeVal null)
+(Push)
+(MakeVal null)
+(Push)
+(MakeVal null)
+(Push)
+(MakeVal 1)
+(Store 2)
+(MakeVal 1)
+(Store 3)
+(MakeVal 0)
+(Store 1)
+(Go _1)
+_0:
+(Push)
+(Fetch 2)
+(Push)
+(Fetch 3)
+(Call #"+[f2]" 2)
+(Store 4)
+(Fetch 3)
+(Store 2)
+(Fetch 4)
+(Store 3)
+(Push)
+(Fetch 1)
+(Push)
+(MakeVal 1)
+(Call #"+[f2]" 2)
+(Store 1)
+_1:
+(Push)
+(Fetch 1)
+(Push)
+(Fetch 0)
+(Call #"!=[f2]" 2)
+(GoTrue _0)
+(Fetch 2)
+(Return)
+];
+#"f[f1]" =
+[
+(MakeVal null)
+(Push)
+(Push)
+(Fetch 0)
+(Push)
+(MakeVal 2)
+(Call #"<[f2]" 2)
+(GoFalse _2)
+(MakeVal 1)
+(Go _3)
+_2:
+(Push)
+(Push)
+(Push)
+(Fetch 0)
+(Push)
+(MakeVal 1)
+(Call #"-[f2]" 2)
+(Call #"f[f1]" 1)
+(Push)
+(Push)
+(Push)
+(Fetch 0)
+(Push)
+(MakeVal 2)
+(Call #"-[f2]" 2)
+(Call #"f[f1]" 1)
+(Call #"+[f2]" 2)
+(Go _5)
+_4:
+_5:
+_3:
+(Return)
+];
+#"main[f0]" =
+[
+(Push)
+(Push)
+(MakeVal 1)
+(Push)
+(Push)
+(MakeVal 2)
+(Push)
+(Push)
+(MakeVal 3)
+(Push)
+(MakeVal null)
+(Call #":[f2]" 2)
+(Call #":[f2]" 2)
+(Call #":[f2]" 2)
+(Call #"writeln[f1]" 1)
+(Push)
+(Push)
+(MakeVal "fibo(35)=")
+(Push)
+(Push)
+(MakeVal 35)
+(Call #"fibo[f1]" 1)
+(Call #"++[f2]" 2)
+(Call #"writeln[f1]" 1)
+(Push)
+(Push)
+(MakeVal "fibo(35)=")
+(Push)
+(Push)
+(MakeVal 35)
+(Call #"f[f1]" 1)
+(Call #"++[f2]" 2)
+(Call #"writeln[f1]" 1)
+(Return)
+];
+}}
+*
+BASIS;
+  \end{minted}
+\end{question}
+\begin{answer}
+  \begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{test_nm_out.png}
+  \end{figure}
+\end{answer}
+
+\end{document}
