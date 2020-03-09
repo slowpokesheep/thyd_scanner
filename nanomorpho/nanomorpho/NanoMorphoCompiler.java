@@ -370,7 +370,7 @@ public class NanoMorphoCompiler {
     print("[");
 
 
-    for (int i = 0; i < argCount; ++i) {
+    for (int i = 0; i < varCount; ++i) {
       print("(MakeVal null)");
       print("(Push)");
     }
