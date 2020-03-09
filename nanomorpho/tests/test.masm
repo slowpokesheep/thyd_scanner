@@ -5,6 +5,12 @@
 [
 (MakeVal null)
 (Push)
+(MakeVal null)
+(Push)
+(MakeVal null)
+(Push)
+(MakeVal null)
+(Push)
 (MakeVal 1)
 (Store 2)
 (MakeVal 1)
@@ -38,7 +44,6 @@ _1:
 (GoTrue _0)
 (Fetch 2)
 (Return)
-(Return)
 ];
 #"f[f1]" =
 [
@@ -51,9 +56,9 @@ _1:
 (Call #"<[f2]" 2)
 (GoFalse _2)
 (MakeVal 1)
-(Return)
+(Go _3)
 _2:
-(GoFalse _3)
+(Push)
 (Push)
 (Push)
 (Fetch 0)
@@ -61,7 +66,18 @@ _2:
 (MakeVal 1)
 (Call #"-[f2]" 2)
 (Call #"f[f1]" 1)
-(Return)
+(Push)
+(Push)
+(Push)
+(Fetch 0)
+(Push)
+(MakeVal 2)
+(Call #"-[f2]" 2)
+(Call #"f[f1]" 1)
+(Call #"+[f2]" 2)
+(Go _5)
+_4:
+_5:
 _3:
 (Return)
 ];
