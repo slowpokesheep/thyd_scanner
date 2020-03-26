@@ -1,0 +1,85 @@
+%{
+  import java.io.*;
+  import java.util.*;
+%}
+
+%token <sval> LITERAL, NAME
+%token IF, ELSE, ELSIF, WHILE, VAR
+%token RETURN, OPNAME, AND, OR, NOT
+
+%type <obj> program
+
+%%
+
+start
+: program { generateProgram(name, ((Vector<Object>)($1)).toArray()); }
+;
+
+%%
+
+private NanoMorphoLexer lexer;
+// The symbol table consists of the following two variables.
+private static int varCount;
+private static HashMap<String,Integer> varTable;
+
+private static String name;
+private int last_token_read;
+
+
+// Adds a new variable to the symbol table.
+// Throws Error if the variable already exists.
+private void addVar(String name) {
+
+  if (varTable.get(name) != null) {
+    throw new Error("Variable "+name+" already exists, near line " + lexer.getLine() + 1);
+  }
+    varTable.put(name,varCount++);
+}
+
+// Finds the location of an existing variable.
+// Throws Error if the variable does not exist.
+private int findVar(String name) {
+  Integer res = varTable.get(name);
+
+  if (res == null) {
+    throw new Error("Variable "+name+" does not exist, near line " + lexer.getLine() + 1);
+  }
+    return res;
+}
+
+private int yylex() {
+  int yyl_return = -1;
+  try {
+    yylval = null;
+    last_token_read = yyl_return = lexer.yylex();
+
+    if (yylval == null ) {
+      yylval = new NanoMorphoParserVal(NanoMorphoParser.yyname[yyl_return]);
+    }
+  }
+  catch (IOException e) {
+    System.err.println("IO error: " + e);
+  }
+  return yyl_return;
+}
+
+public void yyerror(String error) {
+  System.out.println("Error:  " + error);
+  System.out.println("Token:  " + NanoMorphoParser.yyname[last_token_read]);
+  System.out.printf("Line: %d, Column: %d\n", lexer.getLine(), lexer.getColumn());
+  System.exit(1);
+}
+
+public NanoMorphoParser(Reader r) {
+  lexer = new NanoMorphoLexer(r, this);
+}
+
+public static void main(String args[]) throws IOException {
+  NanoMorphoParser yyparser = new NanoMorphoParser(new FileReader(args[0]));
+  name = args[0].substring(0, args[0].lastIndexOf('.'));
+  yyparser.yyparse();
+}
+
+public void generateProgram(String name, Object[] fun) {
+  System.out.println("Hallo");
+}
