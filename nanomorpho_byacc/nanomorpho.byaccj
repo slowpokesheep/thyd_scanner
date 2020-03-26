@@ -80,6 +80,158 @@ public static void main(String args[]) throws IOException {
   yyparser.yyparse();
 }
 
-public void generateProgram(String name, Object[] fun) {
-  System.out.println("Hallo");
+// GENERATE - TODO FIX
+
+private static int nextLab = 0;
+
+// Returns a new, previously unused, label.
+// Useful for control-flow expressions.
+static String newLabel() {
+    return "_"+(nextLab++);
+}
+
+public int newIntLabel() {
+  return nextLab++;
+}
+
+public void print(String s) {
+  //System.out.println(s);
+  writer.println(s);
+}
+
+// Final code
+
+public void generateProgram(String programname, Object[] funs) {
+  print("\""+programname+".mexe\" = main in");
+  print("!");
+  print("{{");
+  
+  for (Object f: funs) {
+    generateFunction((Object[]) f);
+  }
+
+  print("}}");
+  print("*");
+  print("BASIS;");
+}
+
+// [functionName, argCount, varCount, exprs]
+public void generateFunction(Object[] fun) {
+  String functionName = (String) fun[0];
+  int argCount = (Integer) fun[1];
+  int varCount = (Integer) fun[2];
+  Object[] exprs = (Object[]) fun[3];
+
+  print("#\"" +functionName+ "[f" +argCount+ "]\" =");
+  print("[");
+
+
+  for (int i = 0; i < varCount; ++i) {
+    print("(MakeVal null)");
+    print("(Push)");
+  }
+
+  for (Object e: exprs) {
+    generateExpr((Object[]) e);
+  }
+
+
+  print("(Return)");
+  print("];");
+}
+
+// RETURN, STORE, OR, AND, NOT, CALL, FETCH, LITERAL, IF, WHILE, BODY
+public void generateExpr(Object[] e) {
+
+  switch((type) e[0]) {
+    case RETURN: // ["RETURN", expr]
+      generateExpr((Object[]) e[1]);
+      print("(Return)");
+      break;
+    case STORE: // ["STORE", pos, expr]
+      generateExpr((Object[]) e[2]);
+      print("(Store "+e[1]+")");
+      break;
+    case NOT: // ["NOT", expr]
+      generateExpr((Object[]) e[1]);
+      print("(Not)");
+      break;
+    case CALL: // ["CALL", name, args]
+      Object[] args = (Object[]) e[2];
+
+      for (Object arg: args) {
+        print("(Push)");
+        generateExpr((Object[]) arg);
+      }
+
+      print("(Call #\""+e[1]+"[f"+args.length+"]\" "+args.length+")");
+      break;
+    case FETCH: // ["FETCH", pos]
+      print("(Fetch "+e[1]+")");
+      break;
+    case LITERAL:
+      print("(MakeVal "+e[1]+")");
+      break;
+    case IF: // ["IF", expr, expr, expr]
+      
+      int labelElse = newIntLabel();
+      int labelEnd = newIntLabel();
+
+      Object[] then = (Object[]) e[2];
+
+      if ((e[1] instanceof Boolean)) {
+        generateExpr(then);
+        print("(Go _"+labelEnd+")");
+        print("_"+labelElse+":");
+        print("_"+labelEnd+":");
+        return;
+      }
+      Object[] cond = (Object[]) e[1];
+
+      generateJump(cond, 0, labelElse);
+      generateExpr(then);
+
+      print("(Go _"+labelEnd+")");
+      print("_"+labelElse+":");
+
+      Object[] els = (Object[]) e[3];
+      if (els != null) {
+        generateExpr(els);
+      }
+
+      print("_"+labelEnd+":");
+      break;
+    case WHILE: // ["WHILE", expr, expr]
+      String labelStart = newLabel();
+      String labelStop = newLabel();
+
+      print("(Go "+labelStop+")");
+      print(""+labelStart+":");
+
+      generateBody((Object[]) e[2]);
+
+      print(""+labelStop+":");
+
+      generateExpr((Object[]) e[1]);
+      print("(GoTrue "+labelStart+")");
+      break;
+    case BODY: // ["BODY", expr]
+      generateBody(e);
+      break;
+    default:
+      break;
+  }
+}
+
+public void generateBody(Object[] e) {
+  
+  for (Object expr: (Object[]) e[1]) {
+    generateExpr((Object[]) expr);
+  }
+}
+
+public void generateJump(Object[] e, int labelTrue, int labelFalse) {
+  generateExpr(e);
+  if (labelTrue != 0 ) print("(GoTrue _"+labelTrue+")");
+  if (labelFalse != 0 ) print("(GoFalse _"+labelFalse+")");
 }
