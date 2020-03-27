@@ -45,12 +45,12 @@ public int getColumn() { return yycolumn; }
   return yycharat(0);
 }
 
-"&&" {
+{_AND} {
   yyparser.yylval = new NanoMorphoParserVal(yytext());
   return NanoMorphoParser.AND;
 }
 
-"||" {
+{_OR} {
   yyparser.yylval = new NanoMorphoParserVal(yytext());
   return NanoMorphoParser.OR;
 }
@@ -72,7 +72,10 @@ public int getColumn() { return yycolumn; }
   return NanoMorphoParser.NAME;
 }
 
-{_OPNAME} { return NanoMorphoParser.OPNAME; }
+{_OPNAME} {
+  yyparser.yylval = new NanoMorphoParserVal(yytext());
+  return NanoMorphoParser.OPNAME;
+}
 
 // Comment
 ";;;".*$ { /* Ignore */ }

@@ -3,17 +3,137 @@
   import java.util.*;
 %}
 
+%token <sval> OPNAME
 %token <sval> LITERAL, NAME
-%token IF, ELSE, ELSIF, WHILE, VAR
-%token RETURN, OPNAME, AND, OR, NOT
+%token <sval> AND, OR, NOT
 
-%type <obj> program
+%token IF, ELSE, ELSIF, WHILE, VAR
+%token RETURN, OPNAME
+
+
+%type <obj> program function
+%type <ival> funargs
+%type <ival> decls decl
+
+%type <obj> exprs expr binoexpr smallexpr
+%type <obj> orexpr andexpr notexpr
+%type <obj> ifexpr elsebody
+%type <obj> args op body
+
+
+// Precedence and associatives
+%right '='
+%right ':'
+%right RETURN
+%left OPNAME
+%left AND OR
 
 %%
 
 start
-: program { generateProgram(name, ((Vector<Object>)($1)).toArray()); }
-;
+  : program { generateProgram(name, ((Vector<Object>)($1)).toArray()); }
+  ;
+
+program
+  : program function { ((Vector<Object>)($1)).add($2); $$ = $1; } // Multiple functions
+  | function { $$ = new Vector<Object>(); ((Vector<Object>)($$)).add($1); } // Single function
+  ;
+
+function
+  : {
+    varCount = 0;
+    varTable = new HashMap<String, Integer>();
+  }
+  NAME '(' funargs ')' '{' decls exprs '}'
+  { $$ = new Object[] { $2, $4, varCount, ((Vector<Object>)($8)).toArray() }; }
+
+funargs
+  : { $$ = 0; } // Empty
+  | funargs ',' NAME { addVar($3); $$ = $1 + 1; }
+  | NAME { addVar($1); $$ = 1; }
+  ;
+
+// Declarations
+decls
+  : { $$ = 0; } // Empty
+  | decls decl ';' { $$ = $1 + $2; }
+  ;
+
+decl
+  : decl ',' NAME { addVar($3); $$ = $1 + 1; }
+  | VAR NAME { addVar($2); $$ = 1; }
+  ;
+
+// Expressions
+exprs
+  : { $$ = new Vector<Object>(); } // Empty
+  | exprs expr ';' { ((Vector<Object>)($1)).add($2); $$ = $1; }
+  |
+  //: exprs expr ';' { ((Vector<Object>)($1)).add($2); $$ = $1; }
+  //| expr ';' { $$ = new Vector<Object>(); ((Vector<Object>)($$)).add($1); }
+  ;
+
+expr
+  : orexpr { $$ = $1; }
+  | NAME '=' expr { $$ = new Object[] { type.STORE, findVar($1), $3 }; }
+  | RETURN expr { $$ = new Object[] { type.RETURN, $2 }; }
+  ;
+
+orexpr
+  : orexpr OR andexpr { $$ = new Object[] { type.CALL, $2, new Object[] { $1, $3 } }; }
+  | andexpr { $$ = $1; }
+  ;
+
+andexpr
+  : andexpr AND notexpr { $$ = new Object[] { type.CALL, $2, new Object[] { $1, $3 } }; }
+  | notexpr { $$ = $1; }
+  ;
+
+notexpr
+  : '!' notexpr { $$ = new Object[] { type.CALL, '!', new Object[] { $2 } }; }
+  | binoexpr { $$ = $1; }
+  ;
+
+binoexpr
+  : smallexpr { $$ = $1; }
+  | binoexpr OPNAME smallexpr { $$ = new Object[] { type.CALL, $2, new Object[] { $1, $3 } }; }
+  ;
+
+smallexpr
+  : NAME { $$ = new Object[] { type.FETCH, findVar($1) }; }
+  | NAME '(' args ')' { $$ = new Object[] { type.CALL, $1, ((Vector<Object>)($3)).toArray() }; }
+  | LITERAL { $$ = new Object[] { type.LITERAL, $1 }; }
+  | op smallexpr { $$ = new Object[] { type.CALL, $1, new Object[] { $2 } }; }
+  | WHILE '(' expr ')' body { $$ = new Object[] { type.WHILE, $3, new Object[] { type.BODY, $5 } }; }
+  | ifexpr { $$ = $1; }
+  | '(' expr ')' { $$ = $2; }
+  ;
+
+// If statement
+ifexpr
+  : IF '(' expr ')' body elsebody { $$ = new Object[] { type.IF, $3, new Object[] { type.BODY, $5 }, $6 }; }
+  ;
+
+elsebody
+  : { $$ = null; } // Empty
+  | ELSIF '(' expr ')' body elsebody { $$ = new Object[] { type.IF, $3, new Object[] { type.BODY, $5 }, $6 }; }
+  | ELSE body { $$ = new Object[] { type.IF, new Object[] { type.LITERAL, "true" }, new Object[] { type.BODY, $2}, null }; }
+  ;
+
+// Helpers
+args
+  : { $$ = new Vector<Object>(); } // Empty
+  | args ',' expr { ((Vector<Object>)($1)).add($3); $$ = $1; }
+  | expr { $$ = new Vector<Object>(); ((Vector<Object>)($$)).add($1); }
+  ;
+
+op
+  : OPNAME { $$ = $1; }
+  ;
+
+body
+  : '{' exprs '}' { $$ = ((Vector<Object>)($2)).toArray(); }
+  ;
 
 %%
 
@@ -21,10 +141,16 @@ private NanoMorphoLexer lexer;
 // The symbol table consists of the following two variables.
 private static int varCount;
 private static HashMap<String,Integer> varTable;
+static PrintWriter writer;
 
 private static String name;
 private int last_token_read;
 
+
+// Intermediate code element identification strings
+enum type {
+  RETURN, STORE, OR, AND, NOT, CALL, FETCH, LITERAL, IF, WHILE, BODY
+}
 
 // Adds a new variable to the symbol table.
 // Throws Error if the variable already exists.
@@ -95,8 +221,8 @@ public int newIntLabel() {
 }
 
 public void print(String s) {
-  //System.out.println(s);
-  writer.println(s);
+  System.out.println(s);
+  //writer.println(s);
 }
 
 // Final code
