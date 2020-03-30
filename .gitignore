@@ -1,4 +1,4 @@
 **/NanoMorpho.java
 *.class
 *~
-ignore_*
+output

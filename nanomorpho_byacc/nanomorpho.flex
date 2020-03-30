@@ -74,7 +74,32 @@ public int getColumn() { return yycolumn; }
 
 {_OPNAME} {
   yyparser.yylval = new NanoMorphoParserVal(yytext());
-  return NanoMorphoParser.OPNAME;
+  switch (yytext().charAt(0)) {
+    case '^':
+    case '?':
+    case '~':
+        return NanoMorphoParser.OPNAME_1;
+    case ':':
+        return NanoMorphoParser.OPNAME_2;
+    case '|':
+        return NanoMorphoParser.OPNAME_3;
+    case '&':
+        return NanoMorphoParser.OPNAME_4;
+    case '!':
+    case '=':
+    case '<':
+    case '>':
+        return NanoMorphoParser.OPNAME_5;
+    case '+':
+    case '-':
+        return NanoMorphoParser.OPNAME_6;
+    case '*':
+    case '/':
+    case '%':
+        return NanoMorphoParser.OPNAME_7;
+    default:
+        throw new Error("Invalid opname");
+  }
 }
 
 // Comment
