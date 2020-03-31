@@ -22,7 +22,7 @@
 %type <obj> exprs expr binoexpr smallexpr
 %type <obj> orexpr andexpr notexpr
 %type <obj> ifexpr elsebody
-%type <obj> bin args body
+%type <obj> args body
 
 // Precedence and associatives
 %right RETURN
@@ -78,9 +78,8 @@ decl
 
 // Expressions
 exprs
-  : { $$ = new Vector<Object>(); } // Empty
-  | exprs expr ';' { ((Vector<Object>)($1)).add($2); $$ = $1; }
-  |
+  : exprs expr ';' { ((Vector<Object>)($1)).add($2); $$ = $1; }
+  | expr ';' { $$ = new Vector<Object>(); ((Vector<Object>)($$)).add($1); }
   ;
 
 expr
@@ -133,7 +132,7 @@ ifexpr
 elsebody
   : { $$ = null; } // Empty
   | ELSIF '(' expr ')' body elsebody { $$ = new Object[] { type.IF, $3, new Object[] { type.BODY, $5 }, $6 }; }
-  | ELSE body { $$ = new Object[] { type.IF, new Object[] { type.LITERAL, "true" }, new Object[] { type.BODY, $2}, null }; }
+  | ELSE body { $$ = new Object[] { type.IF, new Object[] { type.LITERAL, "true" }, new Object[] { type.BODY, $2 }, null }; }
   ;
 
 // Helpers
@@ -217,16 +216,12 @@ public void yyerror(String error) {
 
 // Helper
 
-private static int nextLab = 0;
-
 // Returns a new, previously unused, label.
 // Useful for control-flow expressions.
-static String newLabel() {
-    return "_"+(nextLab++);
-}
+private static int nextLabel = 1;
 
-public int newIntLabel() {
-  return nextLab++;
+public static int newLabel() {
+  return nextLabel++;
 }
 
 public void emit(String s) {
@@ -283,7 +278,6 @@ public void generateFunction(Object[] fun) {
     generateExpr((Object[]) e);
   }
 
-
   emit("(Return)");
   emit("];");
 }
@@ -316,16 +310,15 @@ public void generateExpr(Object[] e) {
     case LITERAL:
       emit("(MakeVal "+e[1]+")");
       break;
-    case IF: // ["IF", expr, expr, expr]
-      
-      int labelElse = newIntLabel();
-      int labelEnd = newIntLabel();
+    case IF: // ["IF", cond, then, else]
+      int labelElse = newLabel();
+      int labelEnd = newLabel();
 
-      Object[] cond = (Object[]) e[1];
-      Object[] then = (Object[]) e[2];
+      Object[] ifCond = (Object[]) e[1];
+      Object[] ifThen = (Object[]) e[2];
 
-      generateJump(cond, 0, labelElse);
-      generateExpr(then);
+      generateJump(ifCond, 0, labelElse);
+      generateExpr(ifThen);
 
       emit("(Go _"+labelEnd+")");
       emit("_"+labelElse+":");
@@ -337,19 +330,20 @@ public void generateExpr(Object[] e) {
 
       emit("_"+labelEnd+":");
       break;
-    case WHILE: // ["WHILE", expr, expr]
-      String labelStart = newLabel();
-      String labelStop = newLabel();
+    case WHILE: // ["WHILE", cond, body]
+      int labelStart = newLabel();
+      int labelStop = newLabel();
 
-      emit("(Go "+labelStop+")");
-      emit(""+labelStart+":");
+      Object[] whileCond = (Object[]) e[1];
+      Object[] whileBody = (Object[]) e[2];
 
-      generateBody((Object[]) e[2]);
+      emit("_"+labelStart+":");
 
-      emit(""+labelStop+":");
+      generateJump(whileCond, 0, labelStop);
+      generateBody(whileBody);
 
-      generateExpr((Object[]) e[1]);
-      emit("(GoTrue "+labelStart+")");
+      emit("(Go _"+labelStart+")");
+      emit("_"+labelStop+":");
       break;
     case BODY: // ["BODY", expr]
       generateBody(e);
@@ -360,13 +354,13 @@ public void generateExpr(Object[] e) {
 }
 
 public void generateExprP(Object[] e) {
+
   switch((type) e[0]) {
     case CALL: // ["CALL", name, args]
       Object[] args = (Object[]) e[2];
 
       for (Object arg: args) {
-        emit("(Push)");
-        generateExpr((Object[]) arg);
+        generateExprP((Object[]) arg);
       }
 
       if (args.length == 0) emit("(Push)");
@@ -376,7 +370,7 @@ public void generateExprP(Object[] e) {
     case FETCH: // ["FETCH", pos]
       emit("(FetchP "+e[1]+")");
       break;
-    case LITERAL:
+    case LITERAL: // ["LITERAL", string]
       emit("(MakeValP "+e[1]+")");
       break;
     default:
@@ -394,7 +388,7 @@ public void generateBody(Object[] e) {
 public void generateJump(Object[] e, int labelTrue, int labelFalse) {
 
   switch((type) e[0]) {
-    case LITERAL:
+    case LITERAL: // ["LITERAL", string]
       String literal = (String) e[1];
 
       if (literal.equals("false") || literal.equals("null")) {
@@ -404,7 +398,7 @@ public void generateJump(Object[] e, int labelTrue, int labelFalse) {
       if (labelTrue != 0) emit("(Go _"+labelTrue+")");
       return;
     default:
-      generateExpr(e);
+      generateExprP(e);
       if (labelTrue != 0 ) emit("(GoTrue _"+labelTrue+")");
       if (labelFalse != 0 ) emit("(GoFalse _"+labelFalse+")");
   }

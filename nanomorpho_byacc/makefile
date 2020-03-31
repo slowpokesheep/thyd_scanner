@@ -40,6 +40,7 @@ compiler:
 
 move:
 	@mv *.java ${OUTPUT_DIR}
+	@if [ -f *.java~ ]; then mv *.java~ ${OUTPUT_DIR}; fi
 
 clean:
 	rm -rf output

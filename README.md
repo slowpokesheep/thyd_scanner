@@ -1,6 +1,12 @@
 
 
-## Nanomorpho
+## Nanomorpho Byacc - Bot-Up
+* [Jflex](nanomorpho_byacc/nanomorpho.flex)
+* [byacc](nanomorpho_byacc/nanomorpho.byaccj)
+* [test](nanomorpho_byacc/test.s)
+* [makefile](nanomorpho_byacc/makefile)
+
+## Nanomorpho - Top-down
 
 * [Jflex](nanomorpho/nanomorpho/nanomorpho.flex)
 * [Lexer](nanomorpho/nanomorpho/NanoMorphoLexer.java)
@@ -17,6 +23,10 @@
 **Compile**
 ```
 make
+```
+**Run** (Only for nanomorpho_byacc)
+```
+make run
 ```
 **Remove**
 ```

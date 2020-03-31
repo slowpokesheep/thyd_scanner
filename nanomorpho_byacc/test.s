@@ -120,6 +120,51 @@ cond2_test(x, y, z) {
   printl();
 }
 
+;;; Test more cond
+cond3_test(x, y, z) {
+
+  writeln("x = " ++ x ++ " y = " ++ y ++ " z = " ++ z);
+
+  if (x == y && x == z) {
+    writeln("x == y && x == z");
+  }
+  elsif (x != z && y == z) {
+    writeln("x != z && y == z");
+  }
+  elsif (x < y) {
+    writeln("x < y");
+  }
+  elsif (x <= y && x != z) {
+    writeln("x <= y && x != z");
+  }
+  elsif (x > y) {
+    writeln("x > y");
+  }
+  elsif (x >= y) {
+    writeln("x >= y");
+  }
+  else {
+    writeln("Else");
+  };
+  printl();
+}
+
+;;; Test loops
+loop_test() {
+  var x;
+  x = 0;
+
+  write("while (x < 10) { write(x + \" \") } = ");
+
+  while (x < 10) {
+    write(x ++ " ");
+    x = x + 1;
+  };
+  writeln();
+
+  printline();
+}
+
 ;;; Test non-recursive Fibo
 fibo(n) {
   var i, f1, f2, tmp;
@@ -170,6 +215,19 @@ main() {
   cond2_test(false, true, true);
   cond2_test(false, true, false);
   cond2_test(false, false, true);
+  printline();
+
+  cond3_test(1, 1, 1); ;;; x == y && x == z
+  cond3_test(1, 2, 2); ;;; x != z && y == z
+
+  cond3_test(1, 2, 1); ;;; x < y
+  cond3_test(2, 2, 1); ;;; x <= y && x != z
+
+  cond3_test(2, 1, 2); ;;; x > y
+  cond3_test(2, 2, 3); ;;; x >= y
+  printline();
+
+  loop_test();
 
 	writeln("Not Recursive fibo(35) = " ++ fibo(35));
 	writeln("Recursion f(35) = " ++ f(35));
