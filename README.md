@@ -5,6 +5,7 @@
 * [byacc](nanomorpho_byacc/nanomorpho.byaccj)
 * [test](nanomorpho_byacc/test.s)
 * [makefile](nanomorpho_byacc/makefile)
+* [pdf](nanomorpho_byacc/latex/nanomorpho_byacc.pdf)
 
 ## Nanomorpho - Top-down
 
