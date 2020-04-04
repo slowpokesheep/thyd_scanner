@@ -16,16 +16,16 @@ none=\033[0;m
 
 .PHONY: all main classes flex compiler move clean test
 
-all: main move
+all: main classes move
 
-main: classes
+main:
 	@printf "${blue}Making directory <${OUTPUT_DIR}> if it doesn't exist${none}\n"
 	if [ ! -d ${OUTPUT_DIR} ]; then mkdir ${OUTPUT_DIR}; fi
 	@echo ${printline}
 
 classes: flex
 	@printf "${blue}Compiling Lexer, Parser and ParserVal classes${none}\n"
-	javac -d output NanoMorphoLexer.java NanoMorphoParser.java NanoMorphoParserVal.java
+	javac -d ${OUTPUT_DIR} NanoMorphoLexer.java NanoMorphoParser.java NanoMorphoParserVal.java
 	@echo ${printline}
 
 flex: compiler
